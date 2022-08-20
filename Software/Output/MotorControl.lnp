@@ -1,0 +1,5 @@
+".\Output\main.obj",
+".\Output\ws2812.obj",
+".\Output\EEPROM.obj" 
+TO ".\Output\MotorControl" 
+PRINT(".\Listings\MotorControl.m51") RAMSIZE(256) 

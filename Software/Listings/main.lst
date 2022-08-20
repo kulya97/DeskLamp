@@ -1,0 +1,209 @@
+C51 COMPILER V9.60.0.0   MAIN                                                              07/10/2022 00:42:04 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
+OBJECT MODULE PLACED IN .\Output\main.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE User\main.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\User\Inc;.\Driver\Inc;.\Us
+                    -er;D:\Keil_v5\C51\INC\SiLABS\shared\si8051Base) DEBUG OBJECTEXTEND PRINT(.\Listings\main.lst) TABS(2) OBJECT(.\Output\ma
+                    -in.obj)
+
+line level    source
+
+   1          #include "commond.h"
+   2          #include "ws2812.h"
+   3          #include "EEPROM.h"
+   4          #define EX2             0x10
+   5          #define EX3             0x20
+   6          #define EX4             0x40
+   7          /*************************************************/
+   8          sbit    EC11_A         =   P3^6;
+   9          sbit    EC11_B         =   P3^7;
+  10          /*************************************************/
+  11          enum TASK { LED_OFF=0, LED_WHITE, LED_COLOR ,LED_COLOR_STEP};
+  12          enum  TASK TASK_ID;
+  13          //#define LED_OFF 0;
+  14          //#define LED_WHITE 1;
+  15          //#define LED_COLOR 2;
+  16          //#define LED_COLOR_STEP 3;
+  17          /*************************************************/
+  18          uint16_t ADDR_T1_RGB=0x0400;//白光亮度地址
+  19          uint16_t ADDR_T2_HH =0x0402;//彩色H通道高8位地址
+  20          uint16_t ADDR_T2_HL =0x0403;//彩色H通道低8位地址
+  21          uint16_t ADDR_T2_RGB =0x0404;//彩色通道亮度地址
+  22          uint16_t ADDR_T3_RGB =0x0405;//渐变色亮度地址
+  23          
+  24          uint8_t LED_T1_brightness;
+  25          int16_t LED_T2_color;
+  26          int8_t LED_T3_brightness;
+  27          
+  28          /*************************************************/
+  29          void Delay20ms(){   //@24.000MHz
+  30   1        unsigned char i, j, k;
+  31   1      
+  32   1        _nop_();
+  33   1        i = 3;
+  34   1        j = 112;
+  35   1        k = 91;
+  36   1        do
+  37   1        {
+  38   2          do
+  39   2          {
+  40   3            while (--k);
+  41   3          } while (--j);
+  42   2        } while (--i);
+  43   1      }
+  44          
+  45          
+  46          
+  47          void ADC_Init(){
+  48   1          P1M0 = 0x00;                                //设置P1.0为ADC口
+  49   1          P1M1 = 0x01;
+  50   1          ADCCFG = 0x0f;                              //设置ADC时钟为系统时钟/2/16/16
+  51   1          ADC_CONTR = 0x80;                           //使能ADC模块
+  52   1      }
+  53          void INT_Init(){
+C51 COMPILER V9.60.0.0   MAIN                                                              07/10/2022 00:42:04 PAGE 2   
+
+  54   1          INTCLKO = EX2;                              //使能INT2中断
+  55   1          IT1 = 1;                                    //使能INT1下降沿中断
+  56   1          EX1 = 1;                                    //使能INT1中断
+  57   1          IT0 = 1;                                    //使能INT0下降沿中断
+  58   1          EX0 = 1;                                    //使能INT0中断
+  59   1          EA = 1;
+  60   1      }
+  61          void PARAMETRT_INIT(){
+  62   1        LED_T1_brightness= IapRead(ADDR_T1_RGB);
+  63   1        LED_T2_color= IapRead(ADDR_T2_HH)<<8|IapRead(ADDR_T2_HL);
+  64   1        LED_T3_brightness= IapRead(ADDR_T3_RGB);
+  65   1      }
+  66          void SYS_Init(void){
+  67   1        P3M0 = 0x00; 
+  68   1        P3M1 = 0xc1;
+  69   1        ws2812_reset();
+  70   1        ADC_Init();
+  71   1        INT_Init();
+  72   1        PARAMETRT_INIT();
+  73   1        //ws2812_writeboard(255,0,0);
+  74   1      }
+  75          
+  76          int main(void){
+  77   1        uint16_t color_h=0;
+  78   1        uint8_t r,  g,  b;
+  79   1        
+  80   1        SYS_Init();
+  81   1        while(1) {     //主循环，任务分发
+  82   2          switch(TASK_ID){
+  83   3            case LED_OFF:
+  84   3              ws2812_writeboard(0,0,0);
+  85   3              break;
+  86   3            case LED_WHITE:
+  87   3              ws2812_writeboard(LED_T1_brightness,LED_T1_brightness,LED_T1_brightness);
+  88   3              break;
+  89   3            case LED_COLOR:
+  90   3              HSVtoRGB(LED_T2_color,100,LED_T1_brightness,&g,&r,&b);
+  91   3              ws2812_writeboard(g,r,b);
+  92   3              break;
+  93   3            case LED_COLOR_STEP:
+  94   3              Delay20ms();
+  95   3              HSVtoRGB(color_h,100,LED_T3_brightness,&g,&r,&b);
+  96   3              ws2812_writeboard(g,r,b);
+  97   3              color_h++;
+  98   3              if(color_h>=360)
+  99   3                color_h=0;
+ 100   3              break;
+ 101   3            default:break;
+ 102   3          }
+ 103   2        }
+ 104   1      }
+ 105          
+ 106          void INT1_Isr() interrupt 2{//按键
+ 107   1          switch(TASK_ID){
+ 108   2            case LED_OFF:
+ 109   2              TASK_ID=LED_WHITE;
+ 110   2              break;
+ 111   2            case LED_WHITE:
+ 112   2              TASK_ID=LED_COLOR;
+ 113   2              break;
+ 114   2            case LED_COLOR:
+ 115   2              TASK_ID=LED_COLOR_STEP;
+C51 COMPILER V9.60.0.0   MAIN                                                              07/10/2022 00:42:04 PAGE 3   
+
+ 116   2              break;
+ 117   2            case LED_COLOR_STEP:
+ 118   2              TASK_ID=LED_OFF;
+ 119   2              break;
+ 120   2            default:
+ 121   2              TASK_ID=LED_OFF;
+ 122   2              break;
+ 123   2          }
+ 124   1      }
+ 125          
+ 126          void INT0_Isr() interrupt 0{//EC11按键
+ 127   1        switch(TASK_ID){
+ 128   2            case LED_OFF:
+ 129   2              break;
+ 130   2            case LED_WHITE:
+ 131   2              IapErase(ADDR_T1_RGB);
+ 132   2              IapProgram(ADDR_T1_RGB, LED_T1_brightness);
+ 133   2              break;
+ 134   2            case LED_COLOR:
+ 135   2              IapErase(ADDR_T2_HH);
+ 136   2              IapProgram(ADDR_T2_HH, (LED_T2_color>>8)&0xff);
+ 137   2              IapErase(ADDR_T2_HL);
+ 138   2              IapProgram(ADDR_T2_HL, LED_T2_color&0xff);
+ 139   2              break;
+ 140   2            case LED_COLOR_STEP:
+ 141   2              IapErase(ADDR_T3_RGB);
+ 142   2              IapProgram(ADDR_T3_RGB, LED_T3_brightness);
+ 143   2              break;
+ 144   2            default:break;
+ 145   2          }
+ 146   1      }
+ 147          
+ 148          void INT2_Isr() interrupt 10//ec11
+ 149          {
+ 150   1        switch(TASK_ID){
+ 151   2            case LED_OFF:
+ 152   2              break;
+ 153   2            case LED_WHITE:
+ 154   2              if(EC11_B==1)
+ 155   2                LED_T1_brightness++;
+ 156   2              else
+ 157   2                LED_T1_brightness--;
+ 158   2              break;
+ 159   2            case LED_COLOR:
+ 160   2              if(EC11_B==1)
+ 161   2                LED_T2_color++;
+ 162   2              else
+ 163   2                LED_T2_color--;
+ 164   2              LED_T2_color=LED_T2_color<0?360:LED_T2_color;
+ 165   2              LED_T2_color=LED_T2_color>360?0:LED_T2_color;
+ 166   2              break;
+ 167   2            case LED_COLOR_STEP:
+ 168   2              if(EC11_B==1)
+ 169   2                LED_T3_brightness++;
+ 170   2              else
+ 171   2                LED_T3_brightness--;
+ 172   2              LED_T3_brightness=LED_T3_brightness<0?100:LED_T3_brightness;
+ 173   2              LED_T3_brightness=LED_T3_brightness>100?0:LED_T3_brightness;
+ 174   2              break;
+ 175   2            default:break;
+ 176   2          }
+ 177   1      
+C51 COMPILER V9.60.0.0   MAIN                                                              07/10/2022 00:42:04 PAGE 4   
+
+ 178   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    652    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     15       5
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

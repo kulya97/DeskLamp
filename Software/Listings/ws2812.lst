@@ -1,0 +1,125 @@
+C51 COMPILER V9.60.0.0   WS2812                                                            07/10/2022 00:42:04 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE WS2812
+OBJECT MODULE PLACED IN .\Output\ws2812.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE Driver\Src\ws2812.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\User\Inc;.\Driver\
+                    -Inc;.\User;D:\Keil_v5\C51\INC\SiLABS\shared\si8051Base) DEBUG OBJECTEXTEND PRINT(.\Listings\ws2812.lst) TABS(2) OBJECT(.
+                    -\Output\ws2812.obj)
+
+line level    source
+
+   1          #include "ws2812.h"
+   2          
+   3          sbit LED_PIN=P3^5;
+   4          void ws2812_writebit0(void){//24M??,1.25us??30?????
+   5   1        LED_PIN=1;
+   6   1        _nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();
+   7   1        LED_PIN=0;
+   8   1        _nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();
+   9   1        _nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();
+  10   1      }
+  11          
+  12          void ws2812_writebit1(void){
+  13   1        LED_PIN=1;
+  14   1        _nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();
+  15   1        _nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();
+  16   1        LED_PIN=0;
+  17   1        _nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();_nop_();
+  18   1      }
+  19          
+  20          void ws2812_reset(void){//??400us??
+  21   1        unsigned char i, j;
+  22   1        LED_PIN=0;
+  23   1        i = 13;
+  24   1        j = 117;
+  25   1        do
+  26   1        {
+  27   2          while (--j);
+  28   2        } while (--i);
+  29   1      }
+  30          
+  31          void ws2812_writecolor(uint8_t dat){//????led????
+  32   1        uint8_t i;
+  33   1        for( i=0;i<8;i++){
+  34   2          if((dat<<i)&0x80)
+  35   2            ws2812_writebit1();
+  36   2          else
+  37   2            ws2812_writebit0();
+  38   2        }
+  39   1      }
+  40          void ws2812_writeled(uint8_t green,uint8_t red,uint8_t blue){//????LED???
+  41   1        ws2812_writecolor(green);
+  42   1        ws2812_writecolor(red);
+  43   1        ws2812_writecolor(blue);
+  44   1      }
+  45          void ws2812_writeboard(uint8_t green,uint8_t red,uint8_t blue){
+  46   1        ws2812_writeled(green,red,blue);
+  47   1        ws2812_writeled(green,red,blue);
+  48   1        ws2812_writeled(green,red,blue);
+  49   1        ws2812_writeled(green,red,blue);
+  50   1        ws2812_writeled(green,red,blue);
+  51   1        ws2812_writeled(green,red,blue);
+  52   1        ws2812_writeled(green,red,blue);
+  53   1        ws2812_writeled(green,red,blue);
+C51 COMPILER V9.60.0.0   WS2812                                                            07/10/2022 00:42:04 PAGE 2   
+
+  54   1        ws2812_reset();
+  55   1      }
+  56          
+  57          void HSVtoRGB(uint16_t h, uint16_t s, uint16_t v,uint8_t* g,uint8_t* r,uint8_t* b){
+  58   1          // R,G,B from 0-255, H from 0-360, S,V from 0-100
+  59   1          int i;int difs;float RGB_Adj ;
+  60   1          float RGB_min, RGB_max;
+  61   1          RGB_max = v*2.55f;
+  62   1          RGB_min = RGB_max*(100 - s) / 100.0f;
+  63   1          i = h / 60;
+  64   1          difs = h % 60; // factorial part of h
+  65   1          RGB_Adj = (RGB_max - RGB_min)*difs / 60.0f;
+  66   1          switch (i) {
+  67   2              case 0:
+  68   2                  *r = RGB_max;
+  69   2                  *g = RGB_min + RGB_Adj;
+  70   2                  *b = RGB_min;
+  71   2                  break;
+  72   2              case 1:
+  73   2                  *r = RGB_max - RGB_Adj;
+  74   2                  *g = RGB_max;
+  75   2                  *b = RGB_min;
+  76   2                  break;
+  77   2              case 2:
+  78   2                  *r = RGB_min;
+  79   2                  *g = RGB_max;
+  80   2                  *b = RGB_min + RGB_Adj;
+  81   2                  break;
+  82   2              case 3:
+  83   2                  *r = RGB_min;
+  84   2                  *g = RGB_max - RGB_Adj;
+  85   2                  *b = RGB_max;
+  86   2                  break;
+  87   2              case 4:
+  88   2                  *r = RGB_min + RGB_Adj;
+  89   2                  *g = RGB_min;
+  90   2                  *b = RGB_max;
+  91   2                  break;
+  92   2              default:    // case 5:
+  93   2                  *r = RGB_max;
+  94   2                  *g = RGB_min;
+  95   2                  *b = RGB_max - RGB_Adj;
+  96   2                  break;
+  97   2          }
+  98   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    745    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----      32
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

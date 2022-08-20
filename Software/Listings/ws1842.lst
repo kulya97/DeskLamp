@@ -1,0 +1,81 @@
+C51 COMPILER V9.60.0.0   WS1842                                                            07/08/2022 22:21:53 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE WS1842
+OBJECT MODULE PLACED IN .\Output\ws1842.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE Driver\Src\ws1842.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\User\Inc;.\Driver\
+                    -Inc;.\User;D:\Keil_v5\C51\INC\SiLABS\shared\si8051Base) DEBUG OBJECTEXTEND PRINT(.\Listings\ws1842.lst) TABS(2) OBJECT(.
+                    -\Output\ws1842.obj)
+
+line level    source
+
+   1          #include "ws1842.h"
+   2          
+   3          unsigned char LedsArray[WS2812_MAX * 3];      //??????????
+   4          unsigned int ledsCount = WS2812_NUMBERS;      //??????????
+   5          unsigned int nbLedsBytes = WS2812_NUMBERS*3;  //????????????
+   6          
+   7          
+   8          
+   9          //??????,??0-25.
+  10          void setLedCount(unsigned char count)
+  11          {
+  12   1          ledsCount = WS2812_MAX > count ? count : WS2812_MAX;
+  13   1          nbLedsBytes = ledsCount*3;
+  14   1      }
+  15          
+  16          //????????
+  17          unsigned char getLedCount()
+  18          {
+  19   1          return ledsCount;
+  20   1      }
+  21          
+  22          //??????(?????????????,???????????????????)
+  23          void rgb_SetColor(unsigned char LedId, unsigned long color)
+  24          {
+  25   1          if( LedId > ledsCount )
+  26   1          {
+  27   2              return;    //to avoid overflow
+  28   2          }
+  29   1          LedsArray[LedId * 3]     = (color>>8)&0xff;
+  30   1          LedsArray[LedId * 3 + 1] = (color>>16)&0xff;
+  31   1          LedsArray[LedId * 3 + 2] = (color>>0)&0xff;
+  32   1      }
+  33          
+  34          //??????
+  35          void rgb_SetRGB(unsigned char LedId, unsigned long red, unsigned long green, unsigned long blue)
+  36          {
+  37   1          unsigned long Color=red<<16|green<<8|blue;
+  38   1          rgb_SetColor(LedId,Color);
+  39   1      }
+  40          
+  41          
+  42          
+  43          
+  44          //??????
+  45          void rgb_SendArray()
+  46          {
+  47   1          unsigned int i;
+  48   1          bit a=EA;
+  49   1          //????
+  50   1          EA=0;
+  51   1          for(i=0; i<nbLedsBytes; i++)
+  52   1              Ws2812b_WriteByte(LedsArray[ i]);
+  53   1          EA=a;
+C51 COMPILER V9.60.0.0   WS1842                                                            07/08/2022 22:21:53 PAGE 2   
+
+  54   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    248    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =     79      24
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----       1
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

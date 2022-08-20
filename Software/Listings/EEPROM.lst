@@ -1,0 +1,78 @@
+C51 COMPILER V9.60.0.0   EEPROM                                                            07/10/2022 00:42:04 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE EEPROM
+OBJECT MODULE PLACED IN .\Output\EEPROM.obj
+COMPILER INVOKED BY: D:\Keil_v5\C51\BIN\C51.EXE Driver\Src\EEPROM.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\User\Inc;.\Driver\
+                    -Inc;.\User;D:\Keil_v5\C51\INC\SiLABS\shared\si8051Base) DEBUG OBJECTEXTEND PRINT(.\Listings\EEPROM.lst) TABS(2) OBJECT(.
+                    -\Output\EEPROM.obj)
+
+line level    source
+
+   1          #include "EEPROM.h"
+   2          void IapIdle()
+   3          {
+   4   1          IAP_CONTR = 0;                              //??IAP??
+   5   1          IAP_CMD = 0;                                //???????
+   6   1          IAP_TRIG = 0;                               //???????
+   7   1          IAP_ADDRH = 0x80;                           //???????IAP??
+   8   1          IAP_ADDRL = 0;
+   9   1      }
+  10          
+  11          char IapRead(int addr)
+  12          {
+  13   1          char dat;
+  14   1      
+  15   1          IAP_CONTR = WT_24M;                         //??IAP
+  16   1          IAP_CMD = 1;                                //??IAP???
+  17   1          IAP_ADDRL = addr;                           //??IAP???
+  18   1          IAP_ADDRH = addr >> 8;                      //??IAP???
+  19   1          IAP_TRIG = 0x5a;                            //?????(0x5a)
+  20   1          IAP_TRIG = 0xa5;                            //?????(0xa5)
+  21   1          _nop_();
+  22   1          dat = IAP_DATA;                             //?IAP??
+  23   1          IapIdle();                                  //??IAP??
+  24   1      
+  25   1          return dat;
+  26   1      }
+  27          
+  28          void IapProgram(int addr, char dat)
+  29          {
+  30   1          IAP_CONTR = WT_24M;                         //??IAP
+  31   1          IAP_CMD = 2;                                //??IAP???
+  32   1          IAP_ADDRL = addr;                           //??IAP???
+  33   1          IAP_ADDRH = addr >> 8;                      //??IAP???
+  34   1          IAP_DATA = dat;                             //?IAP??
+  35   1          IAP_TRIG = 0x5a;                            //?????(0x5a)
+  36   1          IAP_TRIG = 0xa5;                            //?????(0xa5)
+  37   1          _nop_();
+  38   1          IapIdle();                                  //??IAP??
+  39   1      }
+  40          
+  41          void IapErase(int addr)
+  42          {
+  43   1          IAP_CONTR = WT_24M;                         //??IAP
+  44   1          IAP_CMD = 3;                                //??IAP????
+  45   1          IAP_ADDRL = addr;                           //??IAP???
+  46   1          IAP_ADDRH = addr >> 8;                      //??IAP???
+  47   1          IAP_TRIG = 0x5a;                            //?????(0x5a)
+  48   1          IAP_TRIG = 0xa5;                            //?????(0xa5)
+  49   1          _nop_();                                    //
+  50   1          IapIdle();                                  //??IAP??
+  51   1      }
+
+
+C51 COMPILER V9.60.0.0   EEPROM                                                            07/10/2022 00:42:04 PAGE 2   
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     83    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
